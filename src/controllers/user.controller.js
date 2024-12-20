@@ -6,6 +6,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 
+
+
+
 const registerUser = asyncHandler( async (req,res) => {
     //get user details from frontend 
     //validation - not empty
@@ -19,7 +22,7 @@ const registerUser = asyncHandler( async (req,res) => {
     
 
      const {fullname,username,email,password}= req.body
-     console.log("email",email);
+     //console.log("email",email);
     
 
      if ( 
@@ -28,7 +31,7 @@ const registerUser = asyncHandler( async (req,res) => {
         throw new ApiError(400,"all fields are required")
      }
      
-     const existedUser = User.findOne({
+     const existedUser = await User.findOne({
         $or : [{ username },{ email }]
      })
      
@@ -37,18 +40,44 @@ const registerUser = asyncHandler( async (req,res) => {
      }
 
      const avatarLocalPath = req.files?.avatar[0]?.path;
-     const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+     
+    const correctedAvatarLocalPath = avatarLocalPath.replace(/\\/g, '/');
+    console.log("Corrected file path:", correctedAvatarLocalPath);
+    
 
-     if(!avatarLocalPath){
+     if(!correctedAvatarLocalPath){
+        console.log("Avatar file path is missing.");
         throw new ApiError(400, "Avatar file is required")
      }
+
+    
      
-      const avatar = await uploadOnCloudinary(avatarLocalPath)
-      const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+      const avatar = await uploadOnCloudinary(correctedAvatarLocalPath);
+      
 
       if(!avatar){
-        throw new ApiError(400,"Avatar file is required")
+        console.log("Cloudinary upload failed for avatar:", avatarLocalPath);
+        throw new ApiError(400,"Avatar file must required")
       }
+      
+
+      let coverImageLocalPath;
+      //let correctedcoverImageLocalPath = null;
+      if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+         coverImageLocalPath = req.files.coverImage[0].path;}
+ 
+        
+           
+ 
+      let coverImage;
+      if(coverImageLocalPath){
+           
+         const correctedcoverImageLocalPath = coverImageLocalPath.replace(/\\/g, '/');
+         console.log("Corrected file path:", correctedcoverImageLocalPath);
+          coverImage =  await uploadOnCloudinary(correctedcoverImageLocalPath);
+      }
+
       
      const user  = await User.create({
         fullname,

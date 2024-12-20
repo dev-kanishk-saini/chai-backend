@@ -19,15 +19,29 @@ import fs from 'fs';
            const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type : "auto"
            })
+
+
+        if (!response || !response.url) {
+            console.log("Upload failed, no URL found:", response);
+            return null;
+        }
            //file has been uploaded successfully
-           console.log("file is uploaded on cloudianry", resource.url);
+           //console.log("file is uploaded on cloudianry", response.url);
+           fs.unlinkSync(localFilePath)
            return response;
         
     } catch (error){
-        fs.unlinkSync(localFilePath) //remove the locally saved temporary file as the upload operation got failed
+
+            // Log the error with more details for debugging
+            console.error("Error uploading to Cloudinary:", error);
+            console.error("Error details:", error.response || error.message); // More detailed error logs
+    
+       if (fs.existsSync(localFilePath))
+        { fs.unlinkSync(localFilePath) //remove the locally saved temporary file as the upload operation got failed
         return null;
     }
  
     }
+}
 
     export {uploadOnCloudinary}
